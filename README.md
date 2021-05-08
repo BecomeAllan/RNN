@@ -96,3 +96,5 @@ Outro tipo de arquitetura onde a rede tem inputs, processa eles na fase de *enco
 Alguns problemas que RNNs sofrem é por aprenderem com base em sequencias de informação, assim não podendo criar o paralelismo para poder treinar modelos, diminuindo sua velocidade de capacidade de aprendizagem.
 
 Outro problema é com grandes informações que ao passar do tempo, podem criar a explosão ou desaparecimento do gradiente.
+
+teste
