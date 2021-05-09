@@ -36,7 +36,7 @@ Se os valores forem **menores que 1**, produz o **desaparecimento do gradiente**
 
 Este problema chamamos de **Long-Term Dependencies**, onde há uma dependência de tempo, no qual a rede precisa de vários inputs ao longo do tempo e acaba esquecendo de fato como prevêr os últimos inputs $\hat{y}_t$, não conseguindo aprender por possuir uma sequência de tempo $t$ relativamente grande para rede, no qual o gradiente começa a desaparecer e não produz grandes taxas de aprendizado para ajustar os resultados. As 3 formas úteis são:
 
-**1. Função de ativação:** Usar RELU,  no qual sua derivada é 1, não produzindo resultados menores que 1 no gradiente na hora de atualizar.
+**1. Função de ativação:** Usar RELU,  no qual sua derivada é 1 na região positiva e 0 caso contrário, não produzindo resultados menores que 1 no gradiente na hora de atualizar.
 **2. Inicialização dos parâmetros:** Inicializar as matrizes como a matriz identidade e bias igual a zero.
 **3. Células Portas:** LSTM, GRU...
 
