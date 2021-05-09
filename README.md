@@ -6,7 +6,7 @@ Algo notável na RNN, que o tamanho do vetor de entrada é independente, não pr
 
 # Tipos de arquitetura
 
-Os tipos de arquitetura são como abaixo, no qual a 'one to one' seria uma rede neural padrão, por exemplo, o exemplo da classificação de dígitos. Na 'one to many', um exemplo seria uma imagem como input, e output uma serie de palavras. Para a 'many to one', uma sequência de palavras como input e o output podendo ser o sentimento da frase. Numa arquiteura 'many to many', um exemplo seria tradução de texto.
+Os tipos de arquitetura são como abaixo, no qual a 'one to one' seria uma rede neural padrão, por exemplo, o exemplo da classificação de dígitos. Na 'one to many', um exemplo seria uma imagem como input, e output uma serie de palavras. Para a 'many to one', uma sequência de palavras como input e o output podendo ser o sentimento da frase. Numa arquitetura 'many to many', um exemplo seria tradução de texto.
 
 ![arq](Aquitetura.png)
 
@@ -16,7 +16,7 @@ Uma RNN é uma Rede neural normal no qual processa a informação através do te
 
 Em uma célula de RNN, as matrizes $W_{xh},\;W_{hh},\;W_{hy}$ **são as mesmas** conforme passa o tempo $t$.
 
-Os neurônios de ativação podem ser quaisquer, mas o mais usado em uma RNN é a RELU para contrapor um dos problemas das RNNs.
+Os neurônios de ativação podem ser quaisquer, mas o mais usado em uma RNN é a RELU para contrapor um dos problemas das RNNs, pois a derivada para valores positivos é 1, enquanto as derivadas de funções como a tangente hiperbólica e a sigmoide vão para 0.
 
 ![esq](Esquelto.png)
 
