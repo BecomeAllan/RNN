@@ -1,12 +1,12 @@
 # O que é uma RNN?
 
-Uma Recurrent neural network (RNN) é uma arquitetura de Rede Neural, no qual processa dados sequências, como palavra por palavra em uma frase ou informações através do tempo.
+Uma Recurrent neural network (RNN) é uma arquitetura de Rede Neural que processa dados sequenciais, como palavra por palavra em uma frase ou informações através do tempo.
 
 Algo notável na RNN, que o tamanho do vetor de entrada é independente, não precisando ter um tamanho fixo para poder rodar a rede.
 
 # Tipos de arquitetura
 
-Os tipos de arquitetura são como abaixo, no qual a 'one to one' seria uma rede neural padrão. Na 'one to many', um exemplo seria uma imagem como input, e output uma serie de palavras. Para a 'many to one', uma sequência de palavras como input e o output podendo ser o sentimento da frase.
+Os tipos de arquitetura são como abaixo, no qual a 'one to one' seria uma rede neural padrão, por exemplo, o exemplo da classificação de dígitos. Na 'one to many', um exemplo seria uma imagem como input, e output uma serie de palavras. Para a 'many to one', uma sequência de palavras como input e o output podendo ser o sentimento da frase. Numa arquiteura 'many to many', um exemplo seria tradução de texto.
 
 ![arq](Aquitetura.png)
 
