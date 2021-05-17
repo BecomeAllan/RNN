@@ -8,7 +8,7 @@ Algo notável na RNN, que o tamanho do vetor de entrada é independente, não pr
 
 Os tipos de arquitetura são como abaixo, no qual a 'one to one' seria uma rede neural padrão, por exemplo, o exemplo da classificação de dígitos. Na 'one to many', um exemplo seria uma imagem como input, e output uma serie de palavras. Para a 'many to one', uma sequência de palavras como input e o output podendo ser o sentimento da frase. Numa arquitetura 'many to many', um exemplo seria tradução de texto.
 
-![arq](Aquitetura.png)
+![arq](images/Aquitetura.png)
 
 # Por dentro da RNN
 
@@ -18,13 +18,13 @@ Em uma célula de RNN, as matrizes $W_{xh},\;W_{hh},\;W_{hy}$ **são as mesmas**
 
 Os neurônios de ativação podem ser quaisquer, mas o mais usado em uma RNN é a RELU para contrapor um dos problemas das RNNs, pois a derivada para valores positivos é 1, enquanto as derivadas de funções como a tangente hiperbólica e a sigmoide vão para 0.
 
-![esq](Esquelto.png)
+![esq](images/Esquelto.png)
 
 ## Feedfoward
 
 Na fase de propagar a informação, o input é passado, e dependendo da arquitetura, a predição em $\hat{y}_0$ é somada para todas suas propagações no tempo $t$. No qual a camada escondida propaga a informação de $h_0$ até $h_t$ sob a mesma matriz $W_{hh}$.
 
-![fed](Feedfoward.png)
+![fed](images/Feedfoward.png)
 
 ## Backpropagation
 
@@ -40,7 +40,7 @@ Este problema chamamos de **Long-Term Dependencies**, onde há uma dependência 
 **2. Inicialização dos parâmetros:** Inicializar as matrizes como a matriz identidade e bias igual a zero.
 **3. Células Portas:** LSTM, GRU...
 
-![bac](Backprop.png)
+![bac](images/Backprop.png)
 
 ## Portas
 
@@ -61,7 +61,7 @@ Com esses 4 passos, a célula produz resultados que não farão desaparecer o gr
 
 Uma forma de ver isso é que $i_t,f_t,o_t,C_t$ são neurônios que conduz a informação como relevante, ou não relevante por causa da sigmoid, assim na parte de *forget* ele multiplica pelo estado da célula anterior $C_{t-1}$, e se a informação deve ser passada, 1, ou deve ser apaga, 0, da memoria e na parte de *store*, o mesmo processo é conduzido, mas com uma multiplicação fazendo com que o que seja menos relevante fique perto de -1 e o mais relevante perto de 1, podendo não passar alguma informação que é sem importância do input, assim é atualizado na memória guardando essa nova informação para $C_t$ na fase de *update*. Para o *output*, parte desta memória atualizada é passada conduzindo o que é mais ou menos importante pelo *tanh* e multiplicada pelo $o_t$ no qual afunila o que deve passar ou não para poder ser jogada na faze de prever utilizando o resultado de $h_t$.
 
-![lstm](LSTM.png)
+![lstm](images/LSTM.png)
 
 Há variações deste algorítmo, mas acabam por possuir pouca diferença dependendo da situações.
 
@@ -71,13 +71,13 @@ Este é um tipo de arquitetura que produz uma previsão com base na informação
 
 $$y_t=g(W_y[s_i,s'_i] + b_y)$$
 
-![alt](biRNN.png)
+![alt](images/biRNN.png)
 
 # Encoder-Decoder Sequence-to-Sequence Architectures
 
 Outro tipo de arquitetura onde a rede tem inputs, processa eles na fase de *encode* e no $h_t$ propaga estes valores na parte de *decode*, utilizando estes para produzir outputs que por sua vez é utilizado na faze de recursividade para prever a próxima palavra. Um exemplo é na tradução de frases.
 
-![encode](encode.png)
+![encode](images/encode.png)
 
 ## Recursividade
 
@@ -87,9 +87,9 @@ Outro tipo de arquitetura onde a rede tem inputs, processa eles na fase de *enco
 
 É um modulo que faz com que a informação das RNN não perca informação quando tudo for mesclado em apenas um vetor $C_T$, assim pondera a informação podendo ser acessada conforme é relevante na fase de *decoder*. $fc$ é um neurônio que produz resultados de classificação e é aprendível para obter melhor performance no que deve ter como atenção.
 
-![ate](atencao.png)
+![ate](images/atencao.png)
 
-![fc](fc.png)
+![fc](images/fc.png)
 
 # Problemas
 
