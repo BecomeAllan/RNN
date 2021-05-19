@@ -1,3 +1,5 @@
+LAB: [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/BecomeAllan/RNN/blob/main/Lab.ipynb)
+
 # O que é uma RNN?
 
 Uma Recurrent neural network (RNN) é uma arquitetura de Rede Neural que processa dados sequenciais, como palavra por palavra em uma frase ou informações através do tempo.
