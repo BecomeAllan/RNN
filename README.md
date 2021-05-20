@@ -8,23 +8,23 @@ Algo notável na RNN é a capacidade de processar sequências independente do ta
 
 # Tipos de arquitetura
 
-Os tipos de arquitetura são como abaixo, no qual a 'one to one' seria uma rede neural padrão, por exemplo, o exemplo da classificação de dígitos. Na 'one to many', um exemplo seria uma imagem como input, e output uma serie de palavras. Para a 'many to one', uma sequência de palavras como input e o output podendo ser o sentimento da frase. Numa arquitetura 'many to many', um exemplo seria tradução de texto.
+Os tipos de arquitetura são como abaixo, onde a 'one to one' seria uma rede neural padrão, por exemplo, o exemplo da classificação de dígitos. Na 'one to many', um exemplo seria uma imagem como input, e output uma série de palavras formando uma legenda. Para a 'many to one', uma sequência de palavras como input e o output podendo ser o sentimento da frase. Numa arquitetura 'many to many', um exemplo seria tradução de texto.
 
 ![arq](images/Aquitetura.png)
 
 # Por dentro da RNN
 
-Uma RNN é uma Rede neural normal no qual processa a informação através do tempo, assim, para poder interpretar os valores conforme passa o tempo $t$, a camada oculta $h$ passa as informações dadas da $h_{t-1}$ para a $h_{t}$, assim obtendo uma recorrência nos valores.
+Uma RNN é uma Rede neural normal que processa a informação através do tempo, assim, para poder interpretar os valores conforme passa o tempo $t$, a camada oculta $h$ passa as informações dadas da $h_{t-1}$ para a $h_{t}$, assim obtendo uma recorrência nos valores. Este tempo não precisa ser o realidade física, como dados de frequência diária, mas sim um 'tempo' que indica a ordem em uma sequência.
 
-Em uma célula de RNN, as matrizes $W_{xh},\;W_{hh},\;W_{hy}$ **são as mesmas** conforme passa o tempo $t$.
+Em uma célula de RNN, as matrizes $W_{xh},\;W_{hh},\;W_{hy}$ **são as mesmas** conforme passa o tempo $t$. Isto se chama compartilhamento de parâmetros, e é o que permite à rede processar inputs de tamanho variável.
 
-Os neurônios de ativação podem ser quaisquer, mas o mais usado em uma RNN é a RELU para contrapor um dos problemas das RNNs, pois a derivada para valores positivos é 1, enquanto as derivadas de funções como a tangente hiperbólica e a sigmoide vão para 0.
+Os neurônios podem ter qualquer função de ativação, mas o mais usado em uma RNN é a RELU para contrapor um dos problemas das RNNs, pois a derivada para valores positivos é 1, enquanto as derivadas de funções como a tangente hiperbólica e a sigmoide vão para 0 para argumentos muito grandes.
 
 ![esq](images/Esquelto.png)
 
 ## Feedfoward
 
-Na fase de propagar a informação, o input é passado, e dependendo da arquitetura, a predição em $\hat{y}_0$ é somada para todas suas propagações no tempo $t$. No qual a camada escondida propaga a informação de $h_0$ até $h_t$ sob a mesma matriz $W_{hh}$.
+Na fase de propagar a informação, o input atual $x_t$ é processado pela rede junto com o estado oculto do momento anterior $h_{t-1}$ e gera o atual estado oculto $h_t$. Este estado oculto é transformado no valor predito atual, $\hat{y}$. A diferença entre o valor predito e o valor observado gera um custo $L_t$. O custo total da rede, que se usa no processo de otimização, será a soma de todos $L_t$.
 
 ![fed](images/Feedfoward.png)
 
