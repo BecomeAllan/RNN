@@ -1,0 +1,1674 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "name": "Lab.ipynb",
+      "provenance": [],
+      "collapsed_sections": [],
+      "authorship_tag": "ABX9TyOxLBrPuGegqUGsleehRgwI",
+      "include_colab_link": true
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    },
+    "accelerator": "GPU"
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/BecomeAllan/RNN/blob/main/Update%20Encoder-Decoder\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "BdgNtVwJtz4b"
+      },
+      "source": [
+        "# Laboratório\n",
+        "\n",
+        "## Implementações com RNNs"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "v4mmQSmK7UMI"
+      },
+      "source": [
+        "# O que é uma RNN ?"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "_cxqL5BZ9Yhf"
+      },
+      "source": [
+        "Uma Recurrent neural network (RNN) é uma arquitetura de Rede Neural que processa dados sequenciais, como palavra por palavra em uma frase ou informações através do tempo.\n",
+        "\n",
+        "Algo notável na RNN é a capacidade de processar sequências independente do tamanho do vetor de entrada, não precisando ter um tamanho fixo para poder rodar a rede. Por exemplo, uma única rede poderia processar frases com 3, 5, 10 ou mais palavras na mesma rede.\n",
+        "\n",
+        "Algumas aplicações são mostradas na imagem a seguir, no qual a *one to one* seria uma rede do tipo *FeedFoward*.\n"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "G-cbN7-q9SgL"
+      },
+      "source": [
+        "![image](https://raw.githubusercontent.com/BecomeAllan/RNN/main/images/Aquitetura.png)\n",
+        "\n",
+        "[Imagem retirada daqui](http://karpathy.github.io/2015/05/21/rnn-effectiveness/)\n"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "CB21kFiqdI-n"
+      },
+      "source": [
+        "# Comportamento de uma RNN\n",
+        "\n",
+        "O comportamento de uma célula padrão de RNN é através de um loop, onde o $x_t$ é o input confome o tempo $t$ e está célula representada por $h_t$ transporta a informação para a próxima $h_{t+1}$ com a informação adicional para atualizar junto com o $x_{t+1}$.\n",
+        "\n",
+        "O comportamento de um estado de célula $h_t$ diz conforme a próxima informação vai ser processada, criando uma correlação do estado passado para o presente $t$."
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "a0zgJjW0HEYm"
+      },
+      "source": [
+        "<img src=\"https://raw.githubusercontent.com/BecomeAllan/RNN/main/images/Esquelto.png\" alt=\"rnn\" width=\"700\"/>\n",
+        "\n",
+        "\n",
+        "<img src=\"https://raw.githubusercontent.com/BecomeAllan/RNN/main/images/Feedfoward.png\" alt=\"rnn\" width=\"700\"/>\n",
+        "\n",
+        "[Imagens retiradas daqui](http://introtodeeplearning.com/slides/6S191_MIT_DeepLearning_L2.pdf)"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "PUaIU0sSf2EI"
+      },
+      "source": [
+        "## Pseudo-código de uma célula RNN\n",
+        "\n",
+        "Queremos que a célula de RNN complete a frase:\n",
+        "+ \"I love recurrent neural\"\n",
+        "\n",
+        "prevendo na última interação a palavra:\n",
+        "+ \"network\"."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "xMH3-P_Af10R"
+      },
+      "source": [
+        "rnn_cell = RNN()\n",
+        "\n",
+        "# Inicial h_t\n",
+        "hidden_state = [0,0,0,0]\n",
+        "\n",
+        "X_t = ['I', 'love', 'recurrent', 'neural'] ## input [x_1, x_2, x_3, x_4 ] output da Y_4 = ['network']\n",
+        "\n",
+        "for word in X_t:\n",
+        "  y_hat, hidden_state = rnn_cell(word, hidden_state)\n",
+        "\n",
+        "# ['network']\n",
+        "next_word_predict = y_hat"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "27QE7eEijWXP"
+      },
+      "source": [
+        "## Pseudo-código de uma célula RNN para amantes do KERAS"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "cellView": "code",
+        "id": "I8YMBGjqjqco"
+      },
+      "source": [
+        "# Bibliotecas usadas\n",
+        "import tensorflow as tf\n",
+        "from tensorflow import keras\n",
+        "import numpy as np\n",
+        "    \n",
+        "dot = tf.matmul\n",
+        "t = tf.transpose\n",
+        "   \n",
+        "# Criando a layer RNN\n",
+        "class RNN_cell(keras.layers.Layer):\n",
+        "  def __init__(self, rnn_units, input_dim, output_dim):\n",
+        "    super(RNN_cell, self).__init__()\n",
+        "\n",
+        "    # Pesos\n",
+        "    self.W_xh = self.add_weight(shape = (rnn_units, input_dim), initializer=\"random_normal\", dtype='float32')\n",
+        "    self.W_hh = self.add_weight(shape = (rnn_units, rnn_units), initializer=\"random_normal\", dtype='float32')\n",
+        "    self.W_hy = self.add_weight(shape = (output_dim, rnn_units), initializer=\"random_normal\", dtype='float32')\n",
+        "\n",
+        "    # Estado (h_0) inicial \n",
+        "    self.h = tf.zeros([rnn_units, 1])\n",
+        "  \n",
+        "  def call(self, x):\n",
+        "    # x -> h\n",
+        "    # Atualiza o estado h_t\n",
+        "    self.h = tf.tanh( dot(self.W_hh, self.h) + dot( self.W_xh, x))\n",
+        "\n",
+        "    # h -> y\n",
+        "    # \"Dense\"\n",
+        "    predict = dot( self.W_hy, self.h)\n",
+        "    return predict\n",
+        "\n",
+        "  def get_config(self):\n",
+        "    return {\"W_xh\": self.W_xh.numpy(),\n",
+        "            \"W_hh\": self.W_hh.numpy(),\n",
+        "            \"W_hy\": self.W_hy.numpy(),\n",
+        "            \"h\": self.h.numpy()}\n",
+        "\n",
+        "\n",
+        "# Constantes\n",
+        "RNN_UNITS = 2\n",
+        "INPUT_DIM = 2 # VOCAB_SIZE\n",
+        "OUTPUT_DIM = RNN_UNITS # ALWAYS\n",
+        "\n",
+        "\n",
+        "x = np.array([[1,2],  # t0\n",
+        "              [3,4],  # t1\n",
+        "              [5,6],  # t2\n",
+        "              [7,8],  # t3\n",
+        "              [9,10]],# t4\n",
+        "              dtype='float32')\n",
+        "\n",
+        "print(f'Shape do input \"fit()\": {x.shape}')\n",
+        "print(f'Keras shape do layer.Input(): {x.shape}')\n",
+        "\n",
+        "hidden = RNN_cell(RNN_UNITS, INPUT_DIM, OUTPUT_DIM)\n",
+        "\n",
+        "time_steps = x.shape[0] # TIME_STEP\n",
+        "\n",
+        "config = hidden.get_config()\n",
+        "####\n",
+        "print(f\"Pesos: \\n W_xh:\\n{t(config['W_xh'])}\\n\\n W_hh:\\n{t(config['W_hh'])}\\n\\n W_hy:\\n{t(config['W_hy'])}\\n\\n h:\\n{config['h']}\")"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "aSZbN0zNO5p_"
+      },
+      "source": [
+        "print(f'rnn_units: {RNN_UNITS} | input_dim: {INPUT_DIM} | output_dim: {OUTPUT_DIM} |  Número de sequencias: {temp}')\n",
+        "print(f\"Input: \\n {x}\\n\")\n",
+        "for t in range(0, time_steps):\n",
+        "  ht = hidden.get_config()\n",
+        "  xt = x[t,:]\n",
+        "  xt = xt.reshape((2,1))\n",
+        "  print(f\">> Tempo (t): {t} \\n>> Valor do estado (h{t}):\\n{ht['h']}\\n\")\n",
+        "  y_hat = hidden(xt)\n",
+        "  print(f\">> Previu (y_hat{t}) dim{y_hat.shape}: \\n{y_hat}\")\n",
+        "  print('----\\n')\n",
+        "\n",
+        "keras.backend.clear_session()"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "uEUHJIYAckOI"
+      },
+      "source": [
+        "## Quantidade de  células (unidades) de RNN\n",
+        "\n",
+        "+ Veja pelo diagrama que não existe conexão entre as unidades de RNN mas apenas entre suas próprias células.\n",
+        "\n",
+        "<img src=\"https://raw.githubusercontent.com/BecomeAllan/RNN/main/images/Units.png\" alt=\"units\" width=\"700\"/>"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "cR_Qb7Li8uY7"
+      },
+      "source": [
+        "# Quando usar uma RNN ?"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "9SZyaa6wz4aP"
+      },
+      "source": [
+        "Como já introduzido, uma RNN é usada quando os dados tem interação conforme o \"tempo\" passa, ou melhor dizendo, se suas variáveis de *input* tem uma correlação com as dadas sequências destas.\n",
+        "\n",
+        "Ou seja, se uma sequência é passada para uma RNN, como $x_1=[1,2,3]$ e sua \"resposta\" seria o inverso dela, $y=[3,2,1]$, observa-se que existe uma relação entre a sequência do *input* $x$ que diz muito sobre como será o *output*.\n",
+        "\n",
+        "Há muitos outros exemplos que podem ser explorados com RNNs e alguns deles serão abordados por este documento.\n",
+        "\n",
+        "Alguns tipos de dados que são usados para utilizar RNNs:\n",
+        "+ **Tipo de dados:** Sequências, One-Hot-Encode, Embedding..."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "cellView": "form",
+        "id": "lx5BHmXw6D6R"
+      },
+      "source": [
+        "#@title Funções auxiliares\n",
+        "\n",
+        "from random import randint, seed\n",
+        "\n",
+        "def sequence(zero_to , n):\t\n",
+        "  return [randint(0, zero_to) for _ in range(n)]\n",
+        "\n",
+        "def backsequence(seq):\n",
+        "  return seq[::-1]\n",
+        "\n",
+        "def one_hot_encode(data, max_lenght):\n",
+        "  new_data = list()\n",
+        "  for x in data:\n",
+        "    hot = [0]*(max_lenght)\n",
+        "    hot[x] = 1\n",
+        "    new_data.append(hot)\n",
+        "\n",
+        "  return new_data\n",
+        "\n",
+        "def one_hot_decode(data):\n",
+        "  return [np.argmax(x) for x in data]\n",
+        "\n",
+        "\n",
+        "def create_dataset(train_size, test_size, time_steps, vocabulary_size):\n",
+        "  x = [sequence(vocabulary_size - 1 , time_steps) for _ in range(train_size)]\n",
+        "  y = [backsequence(y) for y in x]\n",
+        "  X_train = np.array([one_hot_encode(x, vocabulary_size) for x in x])\n",
+        "  Y_train = np.array([one_hot_encode(y, vocabulary_size) for y in y])\n",
+        "  \n",
+        "  x = [sequence(vocabulary_size - 1 , time_steps) for _ in range(test_size)]\n",
+        "  y = [backsequence(y) for y in x]\n",
+        "  X_test = np.array([one_hot_encode(x, vocabulary_size) for x in x])\n",
+        "  Y_test = np.array([one_hot_encode(y, vocabulary_size) for y in y])\n",
+        "\n",
+        "  return X_train, Y_train, X_test, \tY_test\n",
+        "\n",
+        "def plot(p):\n",
+        "\tplt.plot(p.history['accuracy'])\n",
+        "\tplt.plot(p.history['val_accuracy'])\n",
+        "\tplt.title('accuracy')\n",
+        "\tplt.ylabel('accuracy')\n",
+        "\tplt.xlabel('epoch')\n",
+        "\tplt.legend(['train', 'val'], loc='upper left')\n",
+        "\tplt.show()\n",
+        " \n",
+        "\tplt.plot(p.history['loss'])\n",
+        "\tplt.plot(p.history['val_loss'])\n",
+        "\tplt.title('loss')\n",
+        "\tplt.ylabel('loss')\n",
+        "\tplt.xlabel('epoch')\n",
+        "\tplt.legend(['train', 'val'], loc='upper left')\n",
+        "\tplt.show()"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "IWCVsWc4Jus6"
+      },
+      "source": [
+        "### Criando o dataset"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "MaJWxyQ-3bb0"
+      },
+      "source": [
+        "# Dados em one-hot-encode\n",
+        "X_train, Y_train, X_test, Y_test = create_dataset(train_size=20000, test_size=200, time_steps=5, vocabulary_size=10)\n",
+        "\n",
+        "print(f'Amostra 1:\\n\\\n",
+        "x = {one_hot_decode(X_train[0])}\\n \\\n",
+        "one_hot_encode do x:\\n \\\n",
+        "{X_train[0]}\\n\\n \\\n",
+        "y = {one_hot_decode(Y_train[0])}\\n \\\n",
+        "one_hot_encode do y:\\n \\\n",
+        "{Y_train[0]}')"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "J-88GFwW3cBa"
+      },
+      "source": [
+        "## Exemplo 1.1: Artificial neural network\n",
+        "\n",
+        "Conforme o exemplo da sequência $x_1=[1,2,3]$ e $y=[3,2,1]$, exploramos estes dados com uma rede neural *feedfoward* para avaliar sua resposta."
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "4MItf7-ycatD"
+      },
+      "source": [
+        "### Modelo"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "MCEt6XynNfIL"
+      },
+      "source": [
+        "from tensorflow import keras\n",
+        "from keras import layers\n",
+        "import matplotlib.pyplot as plt\n",
+        "\n",
+        "VOCAB_SIZE = 10\n",
+        "TIME_STEPS = 5\n",
+        "\n",
+        "# Modelo RNA feedfoward\n",
+        "modelo = keras.Sequential(\n",
+        "    [\n",
+        "     keras.Input(shape=(TIME_STEPS ,VOCAB_SIZE), name=\"Input\"),\n",
+        "     layers.Dense(32, activation='sigmoid'),\n",
+        "     layers.BatchNormalization(),\n",
+        "     layers.Dense(64, activation='sigmoid'),\n",
+        "     layers.BatchNormalization(),\n",
+        "     layers.Dense(10, activation= \"softmax\")\n",
+        "    ]\n",
+        ")\n",
+        "\n",
+        "modelo.summary()\n",
+        "\n",
+        "# Treinando modelo\n",
+        "modelo.compile(optimizer='adam', metrics=['accuracy'], loss= keras.losses.categorical_crossentropy)\n",
+        "hist = modelo.fit(x = X_train,\n",
+        "                  y = Y_train,\n",
+        "                  validation_split=0.2,\n",
+        "                  batch_size = 1000,\n",
+        "                  epochs=200,\n",
+        "                  callbacks=keras.callbacks.EarlyStopping('loss', patience=10),\n",
+        "                  verbose=0)\n",
+        "\n",
+        "# Grafico\n",
+        "plot(hist)\n",
+        "\n",
+        "# Previsões\n",
+        "y_hat = modelo(X_test[0:10])\n",
+        "\n",
+        "\n",
+        "x = [one_hot_decode(y) for y in X_test[0:10] ]\n",
+        "y_hat_num = [[np.argmax(y) for y in k] for k in y_hat]\n",
+        "y = [one_hot_decode(y) for y in Y_test[0:10] ]\n",
+        "\n",
+        "print(\"--Algumas previsões---\")\n",
+        "print(f'x:\\n{x}\\ny_hat:\\n{y_hat_num}\\ny:\\n{y}')\n",
+        "\n",
+        "keras.backend.clear_session()"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "GjkGqpXTb__R"
+      },
+      "source": [
+        "## Exemplo 1.2: RNN\n",
+        "\n",
+        "Agora, o exemplo vai ser aplicado com uma RNN para avaliar sua capacidade."
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "bFKHpePMc1vm"
+      },
+      "source": [
+        "### Modelo"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "SiOx0WCOcyA_"
+      },
+      "source": [
+        "from tensorflow import keras\n",
+        "from keras import layers\n",
+        "\n",
+        "VOCAB_SIZE = 10\n",
+        "TIME_STEPS = 5\n",
+        "\n",
+        "# Modelo RNN\n",
+        "modelo = keras.Sequential(\n",
+        "    [\n",
+        "     keras.Input(shape=(TIME_STEPS, VOCAB_SIZE), name=\"Input\"),\n",
+        "     # Output do RNN é o ultimo valor da sequencia\n",
+        "     layers.SimpleRNN(16),\n",
+        "     # Replica o valor do output TIME_STEPS vezes\n",
+        "     layers.RepeatVector(TIME_STEPS),\n",
+        "     layers.Dense(VOCAB_SIZE, activation= \"softmax\")\n",
+        "    ]\n",
+        ")\n",
+        "\n",
+        "modelo.summary()\n",
+        "\n",
+        "# Treinando modelo\n",
+        "modelo.compile(optimizer='adam', metrics=['accuracy'], loss= keras.losses.categorical_crossentropy)\n",
+        "hist = modelo.fit(x = X_train,\n",
+        "                  y = Y_train,\n",
+        "                  validation_split=0.2,\n",
+        "                  batch_size = 1000,\n",
+        "                  epochs=200,\n",
+        "                  callbacks=keras.callbacks.EarlyStopping('loss', patience=10),\n",
+        "                  verbose=0)\n",
+        "\n",
+        "# Grafico\n",
+        "plot(hist)\n",
+        "\n",
+        "# Previsões\n",
+        "y_hat = modelo(X_test[0:10])\n",
+        "\n",
+        "\n",
+        "x = [one_hot_decode(y) for y in X_test[0:10] ]\n",
+        "y_hat_num = [[np.argmax(y) for y in k] for k in y_hat]\n",
+        "y = [one_hot_decode(y) for y in Y_test[0:10] ]\n",
+        "\n",
+        "print(\"--Algumas previsões---\")\n",
+        "print(f'x:\\n{x}\\ny_hat:\\n{y_hat_num}\\ny:\\n{y}')\n",
+        "\n",
+        "keras.backend.clear_session()"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "Iq5niDHhplh9"
+      },
+      "source": [
+        "### Diferentes quantidades de células de RNN"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "eZMEuRp-h1A2"
+      },
+      "source": [
+        "#@title Funções auxiliares\n",
+        "def rnn_model(unn):\n",
+        "  modelo = keras.Sequential(\n",
+        "      [\n",
+        "       keras.Input(shape=(TIME_STEPS, VOCAB_SIZE), name=\"Input\"),\n",
+        "       # Output do RNN é o ultimo valor da sequencia\n",
+        "       layers.SimpleRNN(unn),\n",
+        "       # Replica o valor do output TIME_STEPS vezes\n",
+        "       layers.RepeatVector(TIME_STEPS),\n",
+        "       layers.Dense(VOCAB_SIZE, activation= \"softmax\")\n",
+        "     ]\n",
+        "    )\n",
+        "  modelo.compile(optimizer='adam', metrics=['accuracy'],\n",
+        "                 loss= keras.losses.categorical_crossentropy)\n",
+        "  hist = modelo.fit(x = X_train,\n",
+        "                  y = Y_train,\n",
+        "                  validation_split=0.2,\n",
+        "                  batch_size = 1000,\n",
+        "                  epochs=200,\n",
+        "                  callbacks=keras.callbacks.EarlyStopping('loss', patience=10),\n",
+        "                  verbose=0)\n",
+        "\n",
+        "  # Previsões\n",
+        "  y_hat = modelo(X_test[0:10])\n",
+        "  y_hat_v = modelo.evaluate(X_test, Y_test, verbose=0)\n",
+        "\n",
+        "  x = [one_hot_decode(y) for y in X_test[0:10] ]\n",
+        "  y_hat_num = [[np.argmax(y) for y in k] for k in y_hat]\n",
+        "  y = [one_hot_decode(y) for y in Y_test[0:10] ]\n",
+        "\n",
+        "  print(f\"Acurácia: {round(y_hat_v[1],2)}\")\n",
+        "  print(\"--Algumas previsões---\")\n",
+        "  print(f'x:\\n{x}\\ny_hat:\\n{y_hat_num}\\ny:\\n{y}')\n",
+        "  keras.backend.clear_session()\n"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "JSWx8sOAp-Wf"
+      },
+      "source": [
+        "## Unidades de RNN\n",
+        "for u in [2,4,16,24]:\n",
+        "  print(f'Unidades de RNN: {u}')\n",
+        "  rnn_model(u)\n",
+        "  print('\\n\\n')"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "svEFCbh3OlRR"
+      },
+      "source": [
+        "### RNN com mais profundidade"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "cellView": "form",
+        "id": "L3auUCpXJUPG"
+      },
+      "source": [
+        "#@title Funções auxiliares\n",
+        "def rnn_model_multilayer(unn):\n",
+        "  modelo = keras.Sequential(\n",
+        "      [\n",
+        "       keras.Input(shape=(TIME_STEPS, VOCAB_SIZE), name=\"Input\"),\n",
+        "       # Output do RNN é o ultimo valor da sequencia\n",
+        "       layers.SimpleRNN(unn),\n",
+        "       layers.RepeatVector(TIME_STEPS),\n",
+        "       layers.SimpleRNN(unn),\n",
+        "       layers.RepeatVector(TIME_STEPS),\n",
+        "       layers.SimpleRNN(unn),\n",
+        "       # Replica o valor do output TIME_STEPS vezes\n",
+        "       layers.RepeatVector(TIME_STEPS),\n",
+        "       layers.Dense(VOCAB_SIZE, activation= \"softmax\")\n",
+        "     ]\n",
+        "    )\n",
+        "  modelo.compile(optimizer='adam', metrics=['accuracy'],\n",
+        "                 loss= keras.losses.categorical_crossentropy)\n",
+        "  hist = modelo.fit(x = X_train,\n",
+        "                  y = Y_train,\n",
+        "                  validation_split=0.2,\n",
+        "                  batch_size = 1000,\n",
+        "                  epochs=200,\n",
+        "                  callbacks=keras.callbacks.EarlyStopping('loss', patience=10),\n",
+        "                  verbose=0)\n",
+        "\n",
+        "  # Previsões\n",
+        "  y_hat = modelo(X_test[0:10])\n",
+        "  y_hat_v = modelo.evaluate(X_test, Y_test, verbose=0)\n",
+        "\n",
+        "  x = [one_hot_decode(y) for y in X_test[0:10] ]\n",
+        "  y_hat_num = [[np.argmax(y) for y in k] for k in y_hat]\n",
+        "  y = [one_hot_decode(y) for y in Y_test[0:10] ]\n",
+        "\n",
+        "  print(f\"Acurácia: {round(y_hat_v[1],2)}\")\n",
+        "  print(\"--Algumas previsões---\")\n",
+        "  print(f'x:\\n{x}\\ny_hat:\\n{y_hat_num}\\ny:\\n{y}')\n",
+        "  keras.backend.clear_session()\n"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "zIk6NO8VJjjh"
+      },
+      "source": [
+        "\n",
+        "## Unidades de RNN\n",
+        "for u in [2,4,16,24]:\n",
+        "  print(f'Unidades de RNN: {u}')\n",
+        "  rnn_model_multilayer(u)\n",
+        "  print('\\n\\n')\n"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "ZoOdeDVVOurd"
+      },
+      "source": [
+        "### RNN com LSTM"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "cellView": "form",
+        "id": "2Yj_GVcNOyk9"
+      },
+      "source": [
+        "#@title Funções auxiliares\n",
+        "def rnn_model_LSTM(unn):\n",
+        "  modelo = keras.Sequential(\n",
+        "      [\n",
+        "       keras.Input(shape=(TIME_STEPS, VOCAB_SIZE), name=\"Input\"),\n",
+        "       # Output do RNN é o ultimo valor da sequencia\n",
+        "       layers.LSTM(unn),\n",
+        "       layers.RepeatVector(TIME_STEPS),\n",
+        "       layers.LSTM(unn),\n",
+        "       layers.RepeatVector(TIME_STEPS),\n",
+        "       layers.LSTM(unn),\n",
+        "       # Replica o valor do output TIME_STEPS vezes\n",
+        "       layers.RepeatVector(TIME_STEPS),\n",
+        "       layers.Dense(VOCAB_SIZE, activation= \"softmax\")\n",
+        "     ]\n",
+        "    )\n",
+        "  modelo.compile(optimizer='adam', metrics=['accuracy'],\n",
+        "                 loss= keras.losses.categorical_crossentropy)\n",
+        "  hist = modelo.fit(x = X_train,\n",
+        "                  y = Y_train,\n",
+        "                  validation_split=0.2,\n",
+        "                  batch_size = 1000,\n",
+        "                  epochs=200,\n",
+        "                  callbacks=keras.callbacks.EarlyStopping('loss', patience=10),\n",
+        "                  verbose=0)\n",
+        "\n",
+        "  # Previsões\n",
+        "  y_hat = modelo(X_test[0:10])\n",
+        "  y_hat_v = modelo.evaluate(X_test, Y_test, verbose=0)\n",
+        "\n",
+        "  x = [one_hot_decode(y) for y in X_test[0:10] ]\n",
+        "  y_hat_num = [[np.argmax(y) for y in k] for k in y_hat]\n",
+        "  y = [one_hot_decode(y) for y in Y_test[0:10] ]\n",
+        "\n",
+        "  print(f\"Acurácia: {round(y_hat_v[1],2)}\")\n",
+        "  print(\"--Algumas previsões---\")\n",
+        "  print(f'x:\\n{x}\\ny_hat:\\n{y_hat_num}\\ny:\\n{y}')\n",
+        "  keras.backend.clear_session()\n"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "jPv6iulmOylN"
+      },
+      "source": [
+        "\n",
+        "## Unidades de RNN\n",
+        "for u in [2,4,16,24]:\n",
+        "  print(f'Unidades de RNN: {u}')\n",
+        "  rnn_model_LSTM(u)\n",
+        "  print('\\n\\n')\n"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "vwneC4YyPUkA"
+      },
+      "source": [
+        "### RNN com LSTM e return_seq = TRUE"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "cellView": "form",
+        "id": "RNMgVKOzPOU3"
+      },
+      "source": [
+        "#@title Funções auxiliares\n",
+        "def rnn_model_LSTM_SEQ(unn):\n",
+        "  modelo = keras.Sequential(\n",
+        "      [\n",
+        "       keras.Input(shape=(TIME_STEPS, VOCAB_SIZE), name=\"Input\"),\n",
+        "       # Output do RNN é o ultimo valor da sequencia\n",
+        "       layers.LSTM(unn, return_sequences=True),\n",
+        "       layers.LSTM(unn, return_sequences=True),\n",
+        "       # Replica o valor do output TIME_STEPS vezes\n",
+        "       layers.TimeDistributed(layers.Dense(VOCAB_SIZE, activation= \"softmax\"))\n",
+        "     ]\n",
+        "    )\n",
+        "  modelo.compile(optimizer='adam', metrics=['accuracy'],\n",
+        "                 loss= keras.losses.categorical_crossentropy)\n",
+        "  hist = modelo.fit(x = X_train,\n",
+        "                  y = Y_train,\n",
+        "                  validation_split=0.2,\n",
+        "                  batch_size = 1000,\n",
+        "                  epochs=200,\n",
+        "                  callbacks=keras.callbacks.EarlyStopping('loss', patience=10),\n",
+        "                  verbose=0)\n",
+        "\n",
+        "  # Previsões\n",
+        "  y_hat = modelo(X_test[0:10])\n",
+        "  y_hat_v = modelo.evaluate(X_test, Y_test, verbose=0)\n",
+        "\n",
+        "  x = [one_hot_decode(y) for y in X_test[0:10] ]\n",
+        "  y_hat_num = [[np.argmax(y) for y in k] for k in y_hat]\n",
+        "  y = [one_hot_decode(y) for y in Y_test[0:10] ]\n",
+        "\n",
+        "  print(f\"Acurácia: {round(y_hat_v[1],2)}\")\n",
+        "  print(\"--Algumas previsões---\")\n",
+        "  print(f'x:\\n{x}\\ny_hat:\\n{y_hat_num}\\ny:\\n{y}')\n",
+        "  keras.backend.clear_session()\n"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "4Uftx_FbPOU4"
+      },
+      "source": [
+        "\n",
+        "## Unidades de RNN\n",
+        "for u in [2,4,16,24]:\n",
+        "  print(f'Unidades de RNN: {u}')\n",
+        "  rnn_model_LSTM_SEQ(u)\n",
+        "  print('\\n\\n')\n"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "Ev5tt6ec8JJr"
+      },
+      "source": [
+        "### RNN com LSTM e return_state = TRUE, return_seq = TRUE"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "YfTOTLUZPHGy",
+        "cellView": "form"
+      },
+      "source": [
+        "#@title Funções auxiliares\n",
+        "def rnn_model_state(unn):\n",
+        "  input = keras.Input(shape=(TIME_STEPS, VOCAB_SIZE))\n",
+        "\n",
+        "  lstm1 = layers.LSTM(unn, return_state= True)\n",
+        "  LSTM_output, state_h, state_c = lstm1(input)\n",
+        "  states = [state_h, state_c]\n",
+        "\n",
+        "  repeat = layers.RepeatVector(TIME_STEPS)\n",
+        "  LSTM_output = repeat(LSTM_output)\n",
+        "\n",
+        "  lstm2 = layers.LSTM(unn, return_sequences=True)\n",
+        "  all_state_h = lstm2(LSTM_output, initial_state = states)\n",
+        "\n",
+        "  dense = layers.TimeDistributed(layers.Dense(VOCAB_SIZE,\"softmax\" ))\n",
+        "\n",
+        "  out = dense(all_state_h)\n",
+        "\n",
+        "  modelo = keras.Model(input,out)\n",
+        "  modelo.compile(optimizer='adam', metrics=['accuracy'],\n",
+        "                 loss= keras.losses.categorical_crossentropy)\n",
+        "  hist = modelo.fit(x = X_train,\n",
+        "                  y = Y_train,\n",
+        "                  validation_split=0.2,\n",
+        "                  batch_size = 1000,\n",
+        "                  epochs=200,\n",
+        "                  callbacks=keras.callbacks.EarlyStopping('loss', patience=10),\n",
+        "                  verbose=0)\n",
+        "\n",
+        "  # Previsões\n",
+        "  y_hat = modelo(X_test[0:10])\n",
+        "  y_hat_v = modelo.evaluate(X_test, Y_test, verbose=0)\n",
+        "\n",
+        "  x = [one_hot_decode(y) for y in X_test[0:10] ]\n",
+        "  y_hat_num = [[np.argmax(y) for y in k] for k in y_hat]\n",
+        "  y = [one_hot_decode(y) for y in Y_test[0:10] ]\n",
+        "\n",
+        "  print(f\"Acurácia: {round(y_hat_v[1],2)}\")\n",
+        "  print(\"--Algumas previsões---\")\n",
+        "  print(f'x:\\n{x}\\ny_hat:\\n{y_hat_num}\\ny:\\n{y}')\n",
+        "  keras.backend.clear_session()\n"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "lOplTEEFPHHE"
+      },
+      "source": [
+        "\n",
+        "## Unidades de RNN\n",
+        "for u in [2,4,16,24]:\n",
+        "  print(f'Unidades de RNN: {u}')\n",
+        "  rnn_model_state(u)\n",
+        "  print('\\n\\n')\n"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "qQhwSfMhqpVm"
+      },
+      "source": [
+        "# Aplicações com RNN"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "zk7F6x-GrFpU"
+      },
+      "source": [
+        "Assim como foi visto"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "N6WT2upL3RaF",
+        "cellView": "form"
+      },
+      "source": [
+        "#@title Funções Auxiliares\n",
+        "\n",
+        "def one_hot_decode(data):\n",
+        "  return [np.argmax(x) for x in data]\n",
+        "\n",
+        "def plot(p):\n",
+        "\tplt.plot(p.history['accuracy'])\n",
+        "\tplt.plot(p.history['val_accuracy'])\n",
+        "\tplt.title('accuracy')\n",
+        "\tplt.ylabel('accuracy')\n",
+        "\tplt.xlabel('epoch')\n",
+        "\tplt.legend(['train', 'val'], loc='upper left')\n",
+        "\tplt.show()\n",
+        " \n",
+        "\tplt.plot(p.history['loss'])\n",
+        "\tplt.plot(p.history['val_loss'])\n",
+        "\tplt.title('loss')\n",
+        "\tplt.ylabel('loss')\n",
+        "\tplt.xlabel('epoch')\n",
+        "\tplt.legend(['train', 'val'], loc='upper left')\n",
+        "\tplt.show()\n",
+        " \n",
+        "def one_hot_encode_K(data, max_lenght):\n",
+        "  new_data = list()\n",
+        "  for x in data:\n",
+        "    hot = [0]*(max_lenght)\n",
+        "    hot[x-1] = 1\n",
+        "    new_data.append(hot)\n",
+        "  return new_data\n",
+        "\n",
+        "def one_hot_encode(data, max_lenght):\n",
+        "  new_data = list()\n",
+        "  for x in data:\n",
+        "    hot = [0]*(max_lenght)\n",
+        "    hot[x] = 1\n",
+        "    new_data.append(hot)\n",
+        "  return new_data\n",
+        "\n",
+        "\n",
+        "class Tokenizer_text():\n",
+        "  def __init__(self):\n",
+        "    self.regex = \"[\\'\\n\\t\\d\\\\!\\\"\\#\\$\\%\\&\\(\\)\\*\\+,-./:;<=>\\?@\\[\\]\\^_`\\{\\|\\}~]\"\n",
+        "\n",
+        "  def treat_text(self, text, regex = None):\n",
+        "    if regex:\n",
+        "      self.regex = regex\n",
+        "    \n",
+        "    return re.sub(self.regex, '', unidecode(text).lower())\n",
+        "  \n",
+        "  def treat_data(self, data, max_vocab = 0, regex = None):\n",
+        "    if regex:\n",
+        "      self.regex = regex\n",
+        "      \n",
+        "\n",
+        "    treat = [self.treat_text(m) for m in data]\n",
+        "    \n",
+        "    join = ' '.join(treat)\n",
+        "    vocab = set(join.split())\n",
+        "\n",
+        "    if (max_vocab==0):\n",
+        "      max_vocab = vocab\n",
+        "\n",
+        "    elif len(vocab) <= max_vocab:\n",
+        "      self.vocab = sorted(vocab)\n",
+        "      self.dic = {u:(i+1) for i, u in enumerate(self.vocab)}\n",
+        "      idx_data = self.text2idx(treat)\n",
+        "      return idx_data\n",
+        "\n",
+        "    new_vocab = ['<OAV>'] + sorted(sample(vocab, max_vocab-1))\n",
+        "    vocab = vocab - set(new_vocab)\n",
+        "\n",
+        "    self.vocab = new_vocab\n",
+        "    self.dic = {u:i for i, u in enumerate(self.vocab)}\n",
+        "    self.dic['<OAV>'] = 0\n",
+        "\n",
+        "   # text_data = [d.split(' ') for d in treat]\n",
+        "    idx_data = self.text2idx(treat)\n",
+        "\n",
+        "    return idx_data\n",
+        "\n",
+        "  def idx2text(self, idex):\n",
+        "    return [self.vocab[x] for x in idex]\n",
+        "\n",
+        "  def text2idx(self, text):\n",
+        "    return [list(map(lambda x: self.dic[x] if x in self.dic else 0 , u.split(' '))) for u in text]\n",
+        "\n",
+        "  def for_idx_data2_text(self, data):\n",
+        "    return [self.idx2text(x) for x in data]\n",
+        "\n",
+        "\n",
+        "\n",
+        "class Tokenizer_text_text():\n",
+        "  def __init__(self):\n",
+        "    return\n",
+        "\n",
+        "  def treat_text(self, text):\n",
+        "    return unidecode(text).lower()\n",
+        "  \n",
+        "  def treat_data(self, data, max_vocab = 0):\n",
+        "    treat = [self.treat_text(m) for m in data]\n",
+        "    \n",
+        "    join = '\\n\\n'.join(treat)\n",
+        "    self.vocab = sorted(set(join))\n",
+        "    self.dic = {u:(i+2) for i, u in enumerate(self.vocab)}\n",
+        "    \n",
+        "    if max_vocab <= len(self.vocab):\n",
+        "      self.vocab = sorted(sample(self.vocab, max_vocab))\n",
+        "      self.dic = {u:(i+2) for i, u in enumerate(self.vocab)}\n",
+        "      idx_data = self.text2idx(join)\n",
+        "      return idx_data\n",
+        "    \n",
+        "    idx_data = self.text2idx(join)\n",
+        "\n",
+        "    return idx_data\n",
+        "\n",
+        "  def idx2text(self, idex):\n",
+        "    return [self.vocab[x] for x in idex]\n",
+        "\n",
+        "  def text2idx(self, text):\n",
+        "    return [ self.dic[j] for j in text]\n",
+        "\n",
+        "  def for_idx_data2_text(self, data):\n",
+        "    return [self.idx2text(x) for x in data]\n",
+        "  \n",
+        "\n",
+        "def get_batch(vectorized_songs, seq_length, batch_size):\n",
+        "  # the length of the vectorized songs string\n",
+        "  n = vectorized_songs.shape[0] - 1\n",
+        "  # randomly choose the starting indices for the examples in the training batch\n",
+        "  idx = np.random.choice(n-seq_length, batch_size)\n",
+        "\n",
+        "  '''TODO: construct a list of input sequences for the training batch'''\n",
+        "  input_batch = [vectorized_songs[i : i+seq_length] for i in idx]\n",
+        "  # input_batch = # TODO\n",
+        "  '''TODO: construct a list of output sequences for the training batch'''\n",
+        "  output_batch = [vectorized_songs[i+1 : i+seq_length+1] for i in idx]\n",
+        "  # output_batch = # TODO\n",
+        "\n",
+        "  # x_batch, y_batch provide the true inputs and targets for network training\n",
+        "  x_batch = np.reshape(input_batch, [batch_size, seq_length])\n",
+        "  y_batch = np.reshape(output_batch, [batch_size, seq_length])\n",
+        "  return x_batch, y_batch\n"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "LqnJPUzMrbNx",
+        "cellView": "form"
+      },
+      "source": [
+        "#@title Bibliotecas\n",
+        "import pandas as pd\n",
+        "import numpy as np\n",
+        "import tensorflow as tf\n",
+        "\n",
+        "from tensorflow import keras\n",
+        "from tensorflow.keras import layers\n",
+        "\n",
+        "from keras.preprocessing.text import Tokenizer\n",
+        "from keras.preprocessing.sequence import pad_sequences\n",
+        "\n",
+        "from sklearn.model_selection import train_test_split\n",
+        "\n",
+        "from matplotlib import pyplot as plt\n",
+        "from random import sample\n",
+        "\n",
+        "import os\n",
+        "import time\n",
+        "import re\n",
+        "\n",
+        "!pip install unidecode\n",
+        "from unidecode import unidecode\n",
+        "\n",
+        "tf.config.list_physical_devices('GPU')"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "Q-bCz5eclRam"
+      },
+      "source": [
+        "## Dados"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "LAfxkvsat4A0",
+        "cellView": "form"
+      },
+      "source": [
+        "#@title Baixando os dados\n",
+        "# Baixar dataset\n",
+        "!gdown --id 15FhPHu7Hx6ul_k-EEBZwzpUWznK0gBR3\n",
+        "\n",
+        "!gdown --id 1Eq9oi3_1PuSZ5hoZS5M1A5pTMSyy3K_a\n",
+        "\n",
+        "!gdown --id 1uqM4Mc2kynrFZQaDMpnfFOuYa0vw3vhn\n"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "rlafdjkFuxw4",
+        "cellView": "form"
+      },
+      "source": [
+        "#@title Dados\n",
+        "# Data1\n",
+        "poem_data = pd.read_csv(\"portuguese-poems.csv\", encoding='UTF-8')\n",
+        "\n",
+        "# Data2\n",
+        "cript_data = pd.read_csv(\"Ethereum Historical Data.csv\", encoding='UTF-8')\n",
+        "\n",
+        "# Data3\n",
+        "materias_data = pd.read_csv(\"Historico_de_materias.csv\", encoding='UTF-8')\n",
+        "\n",
+        "poem_data = poem_data.dropna()\n",
+        "cript_data = cript_data.dropna()\n",
+        "materias_data = materias_data.dropna()"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "GDMOUkDvp1Yy"
+      },
+      "source": [
+        "### portuguese-poems.csv"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "cellView": "form",
+        "id": "KfLrdY6Rr02i"
+      },
+      "source": [
+        "#@title Dados(poem_data): portuguese-poems.csv\n",
+        "poem_data.head()"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "cellView": "form",
+        "id": "lUzqx4kdsfFZ"
+      },
+      "source": [
+        "#@title Dados(cript_data): Ethereum Historical Data.csv\n",
+        "\n",
+        "cript_data.head()"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "rGhT3eFX4lyu"
+      },
+      "source": [
+        "### Historico_de_materias.csv"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "YV2DJ2cqu32h",
+        "cellView": "form"
+      },
+      "source": [
+        "#@title Dados(materias_data): Historico_de_materias.csv\n",
+        "materias_data.head()"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "43FCVoZxTx0x"
+      },
+      "source": [
+        "## Seq2value"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "KxA3ZbhYpPLG"
+      },
+      "source": [
+        "### Dataset"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "uSUOwIcriHlO"
+      },
+      "source": [
+        "from keras.preprocessing.text import Tokenizer\n",
+        "from keras.layers.experimental.preprocessing import TextVectorization\n",
+        "from keras.preprocessing.sequence import pad_sequences\n",
+        "\n",
+        "###### TITULOS ######\n",
+        "\n",
+        "# Menor quantidade de textos pra cada assunto\n",
+        "texts_qnt = min([len(materias_data[materias_data['assunto'] == assunto]['titulo']) for assunto in  materias_data['assunto'].unique()])\n",
+        "\n",
+        "# Amostras com mesmo tamnho com base no assunto\n",
+        "materias_data_samp = materias_data.groupby('assunto').sample(texts_qnt)\n",
+        "\n",
+        "# Remover caracteres especiais\n",
+        "titulo = [\" \"+ unidecode(x).lower() + \" \" for x in materias_data_samp['titulo']]\n",
+        "titulo = [re.sub('([, .][a-z]{1,3}[, .])|[0-9]|[:;/\\+,.?\"\\'(){}\\[\\]]|-', ' ', x) for x in titulo]\n",
+        "titulo = np.array([re.sub('([, .][a-z]{1,3}[, .])', ' ', x) for x in titulo])\n",
+        "\n",
+        "#for materias_data['assunto'].unique()\n",
+        "\n",
+        "# Aprende as palavras\n",
+        "tk_titulo = Tokenizer(char_level=False, lower=True, oov_token='[OAV]')\n",
+        "tk_titulo.fit_on_texts(titulo)\n",
+        "\n",
+        "# Ordena por maior quantidade de ocorrência\n",
+        "word_count = dict(sorted(tk_titulo.word_counts.items(), key=lambda item: item[1], reverse=True))\n",
+        "word_count = list(word_count.keys())\n",
+        "\n",
+        "# Pega as 5000 palavras que mais ocorrem\n",
+        "NUM_WORDS = 5000\n",
+        "dic_titulo = {i:(u+2) for u,i in enumerate(word_count[1:(NUM_WORDS-1)])}\n",
+        "\n",
+        "# Adiciona quando n existe a palavra e qnd acaba\n",
+        "dic_titulo['[OAV]'] = 1\n",
+        "dic_titulo['[END]'] = 0\n",
+        "\n",
+        "tk_titulo.word_index = dic_titulo\n",
+        "tk_titulo.index_word = {i:u for u,i in dic_titulo.items()}\n",
+        "\n",
+        "# Cria pad para as sequencias\n",
+        "titulo_data = tk_titulo.texts_to_sequences(titulo)\n",
+        "train_titulo = pad_sequences(titulo_data,padding='post', truncating='post')\n",
+        "\n",
+        "\n",
+        "###### ASSUNTOS ######\n",
+        "\n",
+        "assuntos = materias_data_samp['assunto']\n",
+        "\n",
+        "tk_assunto = Tokenizer()\n",
+        "\n",
+        "tk_assunto.fit_on_texts(assuntos)\n",
+        "\n",
+        "assunto_data = tk_assunto.texts_to_sequences(assuntos)\n",
+        "\n",
+        "train_assunto = [one_hot_encode_K(x, 5) for x in  assunto_data]\n",
+        "\n",
+        "#### DATA\n",
+        "\n",
+        "X_train, X_test, Y_train, Y_test = train_test_split(train_titulo, train_assunto, test_size = 0.2, random_state=5)\n",
+        "\n",
+        "X_train = np.array(X_train)\n",
+        "X_test = np.array(X_test)\n",
+        "Y_train = np.array(Y_train).squeeze()\n",
+        "Y_test = np.array(Y_test).squeeze()"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "NJVapiQ6pVgj"
+      },
+      "source": [
+        "### Modelo"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "0vP-K8-ShRJQ"
+      },
+      "source": [
+        "from tensorflow import keras\n",
+        "from keras import layers\n",
+        "\n",
+        "# VOCAB_SIZE_X = len(tk_titulo.word_index) # 1000\n",
+        "# TIME_STEPS = MAX_LENGTH_TITLE # 77\n",
+        "# VOCAB_SIZE_Y = len(assuntos_tokenizer.word_index) # 5\n",
+        "\n",
+        "\n",
+        "# Modelo RNN\n",
+        "\n",
+        "Input = keras.Input(shape=(15))\n",
+        "x = layers.Embedding(5000, 256, mask_zero=0)(Input)\n",
+        "lstm1 = layers.LSTM(25, return_sequences=True)(x)\n",
+        "lstm2 = layers.LSTM(15, return_sequences=True)(lstm1)\n",
+        "lstm3 = layers.LSTM(10)(lstm2)\n",
+        "norm = layers.BatchNormalization()(lstm3)\n",
+        "d1 = layers.Dense(5, activation='softmax')(norm)\n",
+        "\n",
+        "modelo = keras.Model(Input, d1)\n",
+        "\n",
+        "modelo.summary()\n",
+        "\n",
+        "# Treinando modelo\n",
+        "modelo.compile(optimizer='adam', metrics=['accuracy'], loss= keras.losses.categorical_crossentropy)\n",
+        "\n",
+        "\n",
+        "hist = modelo.fit(x = X_train,\n",
+        "                  y = Y_train,\n",
+        "                  validation_split=0.2,\n",
+        "                  batch_size = 1000,\n",
+        "                  epochs=300,\n",
+        "                  verbose=0,\n",
+        "                  callbacks=keras.callbacks.EarlyStopping('val_accuracy',verbose=1,\n",
+        "                                                          patience=50,\n",
+        "                                                          min_delta=0.05,\n",
+        "                                                          restore_best_weights=True)\n",
+        "                  )\n",
+        "\n",
+        "# Grafico\n",
+        "plot(hist)\n",
+        "\n",
+        "# # Previsões\n",
+        "num = np.random.randint(0,540, 10)\n",
+        "\n",
+        "y_hat = modelo(X_test[num])\n",
+        "\n",
+        "x = [[tk_titulo.index_word[x] for x in y ] for y in X_test[num] ]\n",
+        "y_hat_num = [np.argmax(k) for k in y_hat]\n",
+        "y = [x+1 for x in one_hot_decode(Y_test[num])]\n",
+        "\n",
+        "x_tx = [re.sub(\"\\[END\\]\",\"\",\" \".join(xt)) for xt in x]\n",
+        "y__hat_tx = [tk_assunto.index_word[n+1 ] for n in y_hat_num]\n",
+        "y_tx = [tk_assunto.index_word[n] for n in y]\n",
+        "\n",
+        "y_hat_v = modelo.evaluate(X_test, Y_test, verbose=0)\n",
+        "x_tx = \"\\n\".join([\">> \"+ re.sub(\"\\[OAV\\]\",\"*\", x) for x in x_tx])\n",
+        "\n",
+        "print(\"--Algumas previsões---\")\n",
+        "print(f'Acurácia no banco de teste: {round(y_hat_v[1]*100, 2)}%')\n",
+        "print(f'x:\\n{x_tx}\\ny_hat:\\n{y__hat_tx}\\ny:\\n{y_tx}')\n",
+        "\n",
+        "keras.backend.clear_session()"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "akrp1IGzah0n"
+      },
+      "source": [
+        "## Seq-Seq"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "aVezPajedTfa"
+      },
+      "source": [
+        "### Dataset"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "bbRP1ctvdh_X"
+      },
+      "source": [
+        "#from keras.layers.experimental.preprocessing import TextVectorization\n",
+        "from keras.preprocessing.text import Tokenizer\n",
+        "\n",
+        "# Seleciona os poemas de 'Carlos Drummond de Andrade'\n",
+        "poem_Drommond = poem_data[poem_data['Author']=='Carlos Drummond de Andrade']['Content']\n",
+        "\n",
+        "# Transforma em um data_set\n",
+        "poem_data_Drommond = \"\\n\\n\".join(poem_Drommond)\n",
+        "poem_data_Drommond = re.sub(\"[ ]+\", \" \", poem_data_Drommond)\n",
+        "poem_data_Drommond = np.array([unidecode(poem_data_Drommond).lower()])\n",
+        "\n",
+        "# Cria os token\n",
+        "tk_poem = Tokenizer(char_level=True, filters='')\n",
+        "\n",
+        "# Treina os tokens\n",
+        "tk_poem.fit_on_texts(poem_data_Drommond)\n",
+        "\n",
+        "# tk_poem.word_counts (Quantas palavras)\n",
+        "# Tokeniza os dados\n",
+        "poem_data_Drommond_token = np.array(tk_poem.texts_to_sequences(poem_data_Drommond))\n",
+        "\n",
+        "# Cria um data set\n",
+        "X_train, Y_train = get_batch(poem_data_Drommond_token[0], 100, 20000)\n",
+        "Y_train = np.array([one_hot_encode(y, len(tk_poem.word_index) +1 ) for y in Y_train])\n",
+        "\n",
+        "print(\"\".join([tk_poem.index_word[x] for x in X_train[0]]))"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "Y4gw0BKj_TWs"
+      },
+      "source": [
+        "### Modelo: *teaching forcing*\n",
+        "\n",
+        "Em vez de calcular o erro das predições colocando estes como input, treinamos a rede com a resposta $y$ como input para prever a próxima predição e assim sucessivamente para os outputs no qual o modelo pode se adequar mais rápido."
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "D458rH_d_TW2"
+      },
+      "source": [
+        "from tensorflow import keras\n",
+        "from keras import layers\n",
+        "\n",
+        "VOCAB_SIZE = len(tk_poem.index_word)\n",
+        "TIME_STEPS = 100\n",
+        "\n",
+        "# Modelo RNN\n",
+        "Input = keras.Input(shape=(TIME_STEPS, ), name=\"Input\")\n",
+        "x = keras.layers.Embedding(input_dim=VOCAB_SIZE + 1, output_dim=100)(Input)\n",
+        "\n",
+        "d = layers.Dense(10, activation= 'sigmoid')(x)\n",
+        "\n",
+        "lstm1_out, s_h, s_c = layers.LSTM(20, return_sequences=True, return_state=True)(d)\n",
+        "states1 = [s_h, s_c]\n",
+        "\n",
+        "norm1 = layers.BatchNormalization()(lstm1_out)\n",
+        "d1 = layers.TimeDistributed(layers.Dense(30, activation= \"sigmoid\"))(norm1)\n",
+        "norm2 = layers.BatchNormalization()(d1)\n",
+        "d2 = layers.Dense(30, activation= \"sigmoid\")(norm2)\n",
+        "\n",
+        "lstm2 = layers.LSTM(20, return_sequences=True)(d2, initial_state = states1)\n",
+        "lstm3 = layers.LSTM(20, return_sequences=True)(lstm2, initial_state = states1)\n",
+        "\n",
+        "\n",
+        "norm2 = layers.BatchNormalization()(lstm3)\n",
+        "d3 = layers.TimeDistributed(layers.Dense(30, activation= \"sigmoid\"))(norm2)\n",
+        "norm3 = layers.BatchNormalization()(d3)\n",
+        "d4 = layers.TimeDistributed(layers.Dense(30, activation= \"sigmoid\"))(norm3)\n",
+        "out = layers.Dense(VOCAB_SIZE + 1, activation= \"softmax\")(d4)\n",
+        "\n",
+        "modelo = keras.Model(Input, out)\n",
+        "\n",
+        "\n",
+        "modelo.summary()\n",
+        "\n",
+        "# Treinando modelo\n",
+        "modelo.compile(optimizer=keras.optimizers.Adam(0.05),\n",
+        "               metrics=['accuracy'],\n",
+        "               loss= keras.losses.categorical_crossentropy)\n",
+        "\n",
+        "y = modelo(X_train[0:2])\n",
+        "\n",
+        "y = np.array([[np.argmax(x) for x in k] for k in y ])\n",
+        "\n",
+        "\n",
+        "hist = modelo.fit(x = X_train,\n",
+        "                  y = Y_train,\n",
+        "                  validation_split=0.2,\n",
+        "                  batch_size = 1000,\n",
+        "                  epochs=200,\n",
+        "                  verbose=1,\n",
+        "                  callbacks=keras.callbacks.EarlyStopping('accuracy',\n",
+        "                                                          patience=10,\n",
+        "                                                          min_delta=0.005,\n",
+        "                                                          restore_best_weights=True)\n",
+        "                  )\n",
+        "\n",
+        "# Grafico\n",
+        "plot(hist)\n",
+        "\n",
+        "y_hat = modelo(X_train[0:2])\n",
+        "# Previsões\n",
+        "y_hat = np.array([[np.argmax(x) for x in k] for k in y_hat ])\n",
+        "y_hat = np.array([[tk_poem.index_word[x] for x in k] for k in y_hat ])\n",
+        "\n",
+        "print(\"\".join(y_hat.reshape((1,200))[0]))\n",
+        "\n",
+        "keras.backend.clear_session()"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "gLMulGF5IFmy"
+      },
+      "source": [
+        "# (EM DESENVOLVIMENTO)"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "b06KTcSQGYDt"
+      },
+      "source": [
+        "## Encode-Decode (Seq2Seq)"
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "cQVLXqKqeOnN"
+      },
+      "source": [
+        "### Dataset\n"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "ek0S1jlVeQcA"
+      },
+      "source": [
+        "import tensorflow as tf\n",
+        "from tensorflow.python.framework.ops import disable_eager_execution\n",
+        "disable_eager_execution()\n",
+        "\n",
+        "import keras\n",
+        "from keras.preprocessing.text import Tokenizer\n",
+        "from keras.preprocessing.sequence import pad_sequences\n",
+        "\n",
+        "#### TITLE ####\n",
+        "\n",
+        "poem_data_title = np.array([re.sub(\"[.,:;\\\\/()\\[\\]\\{\\}\\-+=?!]\", \" \", \" \" + unidecode(title).lower() + \" \") for title in poem_data['Title']])\n",
+        "\n",
+        "tk_title = Tokenizer(oov_token='[OAV]', filters='#', num_words=5000, split=' ', lower=False)\n",
+        "tk_title.fit_on_texts(poem_data_title)\n",
+        "\n",
+        "tk_title.word_index = {u:v for u,v in tk_title.word_index.items()}\n",
+        "\n",
+        "tk_title.word_index['[END]'] = 0\n",
+        "\n",
+        "tk_title.index_word = {v:u for u,v in tk_title.word_index.items()}\n",
+        "\n",
+        "\n",
+        "title_train = tk_title.texts_to_sequences(poem_data_title)\n",
+        "title_train = pad_sequences(title_train, padding='post', truncating='post')\n",
+        "\n",
+        "#### CONTENT ####\n",
+        "\n",
+        "poem_data_content = poem_data['Content'].apply(lambda x: \" \" + re.sub(\"([\\'\\\"\\\\\\,.\\?\\[\\]:;\\-\\(\\)<>!])|(\\s)|([0-9])\", \" \", unidecode(x).lower()) + \" \")\n",
+        "poem_data_content = poem_data_content.apply(lambda x: re.sub('( [a-z]{1,2} )',\" \", re.sub('( [a-z]{1,2} )', ' ', x)))\n",
+        "poem_data_content = poem_data_content.apply(lambda x: re.sub(' +', ' ', x))\n",
+        "\n",
+        "poem_texts_content = poem_data_content.apply(lambda x: \"[STR]\" + x)\n",
+        "\n",
+        "tk_content = Tokenizer(oov_token='[OAV]', filters='#', num_words=5000, split=' ', lower=False)\n",
+        "tk_content.fit_on_texts(poem_data_content)\n",
+        "\n",
+        "tk_content.word_index = {u:(v+1) for u,v in tk_content.word_index.items()}\n",
+        "\n",
+        "tk_content.word_index['[END]'] = 0\n",
+        "tk_content.word_index['[STR]'] = 1\n",
+        "\n",
+        "tk_content.index_word = {v:u for u,v in tk_content.word_index.items()}\n",
+        "\n",
+        "content_train = tk_content.texts_to_sequences(poem_texts_content)\n",
+        "content_train = pad_sequences(content_train, padding='post', truncating='post')\n",
+        "\n",
+        "\n",
+        "tk_content.sequences_to_texts(content_train[0:2])\n",
+        "\n",
+        "X_Train, Y_Train, X_test, Y_test = train_test_split(title_train, content_train)"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "2bw_8kvK94fW"
+      },
+      "source": [
+        "from keras import layers\n",
+        "\n",
+        "Encoder_input = keras.Input(shape=(21, ), name='Input')\n",
+        "Encoder_embedding = layers.Embedding(input_dim=5000, output_dim=2, mask_zero=True)(Input_Encoder)\n",
+        "Encoder_lstm1 = layers.LSTM(1)(Encoder_embedding)\n",
+        "\n",
+        "model = keras.Model(Encoder_input, Encoder_embedding)\n",
+        "\n",
+        "model.summary()\n",
+        "\n",
+        "model(X_Train)\n"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "nnK_ppZZdMQ4"
+      },
+      "source": [
+        "#@title Diferentes saidas conforme a especificação da LSTM { display-mode: \"form\" }\n",
+        "\n",
+        "from tensorflow import keras\n",
+        "from keras import layers\n",
+        "\n",
+        "x = layers.Input(shape=(2,3))\n",
+        "lstm = layers.LSTM(2)(x)\n",
+        "model_LSTM = keras.Model(x, lstm)\n",
+        "\n",
+        "out = layers.RepeatVector(2)(lstm)\n",
+        "model_REPEAT = keras.Model(x, out)\n",
+        "\n",
+        "lstm1 = layers.LSTM(2, return_sequences=True)(x)\n",
+        "model_SEQ = keras.Model(x, lstm1)\n",
+        "\n",
+        "# Conecta com o Dense com o ultimo output\n",
+        "dense = layers.Dense(3)(lstm1)\n",
+        "model_DENSE = keras.Model(x, dense)\n",
+        "\n",
+        "# Conecta com o Dense com todos os output do LSTM\n",
+        "denseTime = layers.TimeDistributed(layers.Dense(3))(lstm1)\n",
+        "model_DENSETIME = keras.Model(x, denseTime)\n",
+        "\n",
+        "#lstm2 = layers.LSTM(2, return_sequences=True, return_state=True)(x)\n",
+        "#model = keras.Model(x, lstm2)\n",
+        "\n",
+        "#model1 = keras.Model(x, dense)\n",
+        "\n",
+        "t = np.random.randint(0,10, size=(1,2,3))\n",
+        "\n",
+        "print(f'RNN units: 2 \\n\\nInput/shape{t.shape}:\\n{t}\\\n",
+        "      \\n\\nOutput(LSTM[2]):\\n{model_LSTM(t)}\\\n",
+        "      \\n\\nOutput(LSTM[2]-Repeat):\\n{model_REPEAT(t)}\\\n",
+        "      \\n\\nOutput(LSTM[2][SEQ]):\\n{model_SEQ(t)}\\\n",
+        "      \\n\\nOutput(LSTM[2][SEQ]-Dense[3]):\\n{model_DENSE(t)}\\\n",
+        "      \\n\\nOutput(LSTM[2][SEQ]-DenseTime[3]):\\n{model_DENSETIME(t)}\\\n",
+        "      ')\n",
+        "keras.backend.clear_session()"
+      ],
+      "execution_count": null,
+      "outputs": []
+    }
+  ]
+}
