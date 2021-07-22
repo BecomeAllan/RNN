@@ -26,7 +26,7 @@ Os neurônios podem ter qualquer função de ativação, mas o mais usado em uma
 
 Na fase de propagar a informação, o input atual $x_t$ é processado pela rede junto com o estado oculto do momento anterior $h_{t-1}$ e gera o atual estado oculto $h_t$. Este estado oculto é transformado no valor predito atual, $\hat{y}$. A diferença entre o valor predito e o valor observado gera um custo $L_t$. O custo total da rede, que se usa no processo de otimização, será a soma de todos $L_t$.
 
-<img src="/BecomeAllan/RNN/raw/main/images/Aquitetura.png" alt="arq" style="max-width:100%;">
+<img src="BecomeAllan/RNN/raw/main/images/Aquitetura.png" alt="arq" style="max-width:100%;">
 <!-- ![fed](images/Feedfoward.png) -->
 
 ## Backpropagation
